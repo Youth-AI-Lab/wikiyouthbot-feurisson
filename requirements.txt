@@ -1,0 +1,6 @@
+# PyTorch sans carte graphique (la droplet n'en a pas) : bien plus léger que la version par défaut.
+--extra-index-url https://download.pytorch.org/whl/cpu
+anthropic==2.3.0
+torch==2.15.0+cpu
+setfit==1.2.0
+sentence-transformers==6.2.0

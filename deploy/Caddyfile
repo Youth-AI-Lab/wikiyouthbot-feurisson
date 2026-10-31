@@ -1,0 +1,26 @@
+# Caddy obtient le certificat HTTPS tout seul, pourvu que DOMAINE pointe sur la droplet
+# et que les ports 80 et 443 soient ouverts (caddyserver.com/docs/automatic-https).
+DOMAINE {
+	encode gzip
+	# Au plus 16 Ko par requête : une question et un court historique.
+	request_body {
+		max_size 16KB
+	}
+	header {
+		X-Frame-Options DENY
+		Permissions-Policy "camera=(), geolocation=()"
+		-Server
+	}
+	reverse_proxy 127.0.0.1:8080
+	log {
+		# Pas d'adresse IP des visiteurs dans les journaux de Caddy.
+		format filter {
+			wrap json
+			fields {
+				request>remote_ip delete
+				request>client_ip delete
+				request>headers>X-Forwarded-For delete
+			}
+		}
+	}
+}

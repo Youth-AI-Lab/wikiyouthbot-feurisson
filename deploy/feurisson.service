@@ -1,0 +1,36 @@
+[Unit]
+Description=Feurisson, le chatbot du groupe feux de forêt (Youth AI Lab)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=feurisson
+Group=feurisson
+WorkingDirectory=/opt/feurisson
+# La clé : ANTHROPIC_API_KEY=… (fichier en 600, lisible par root seulement : systemd le lit au démarrage).
+EnvironmentFile=/etc/feurisson/feurisson.env
+Environment=FEURISSON_DONNEES=/var/lib/feurisson
+Environment=FEURISSON_HOTE=127.0.0.1
+Environment=FEURISSON_PORT=8080
+Environment=PYTHONUNBUFFERED=1
+Environment=HF_HUB_OFFLINE=1
+Environment=TOKENIZERS_PARALLELISM=false
+ExecStart=/opt/feurisson/.venv/bin/python -m app.serveur
+Restart=on-failure
+RestartSec=5
+# Journaux, compteur du jour : /var/lib/feurisson ; le reste du système en lecture seule.
+StateDirectory=feurisson
+StateDirectoryMode=0700
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+# CamemBERT occupe environ 1 Go une fois chargé (mesuré en local).
+MemoryMax=1500M
+
+[Install]
+WantedBy=multi-user.target
