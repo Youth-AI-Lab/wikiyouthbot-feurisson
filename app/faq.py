@@ -11,11 +11,12 @@ from collections import Counter
 from .contenu import normaliser
 
 # Mots trop courants pour dire de quoi parle une question.
+# Pas les verbes (faire, pouvoir…) : « Peut-on faire un feu dans le jardin ? » et « Comment protéger le
+# jardin du feu ? » ne diffèrent que par eux.
 MOTS_VIDES = set("""
-a ai au aux avec c ca ce ces cet cette comment d dans de des du elle en est et etre faire faut
-fait il ils j je l la le les leur lui m ma mais me mes moi mon n ne nous on ou par pas peut peux
-plus pour qu quand que quel quelle quelles quels qui quoi s sa se ses si son sont sur t ta te tes
-toi ton tu un une vos votre vous y est ce cela quoi quoi est
+a ai au aux avec c ca ce ces cet cette comment d dans de des du elle en est et etre il ils j je l la le
+les leur lui m ma mais me mes moi mon n ne nous on ou par pas plus pour qu quand que quel quelle quelles
+quels qui quoi s sa se ses si son sont sur t ta te tes toi ton tu un une vos votre vous y cela
 """.split())
 
 
@@ -51,7 +52,10 @@ class IndexFAQ:
         self.vecteurs = [(i, self._vecteur(c)) for i, c in self.phrases]
 
     def _vecteur(self, compte):
-        v = {m: k * self.idf.get(m, 0.0) for m, k in compte.items()}
+        # Un mot que la FAQ n'a jamais vu compte comme le plus rare : il dit que la question parle d'autre chose
+        # (« Peut-on faire un feu dans le jardin ? » n'est pas la fiche sur le jardin qui brûle moins).
+        rare = max(self.idf.values(), default=1.0)
+        v = {m: k * self.idf.get(m, rare) for m, k in compte.items()}
         norme = math.sqrt(sum(x * x for x in v.values())) or 1.0
         return {m: x / norme for m, x in v.items()}
 

@@ -28,13 +28,15 @@ echo "== 2. Compte de service et code dans $APP"
 id feurisson > /dev/null 2>&1 || useradd --system --home "$APP" --shell /usr/sbin/nologin feurisson
 mkdir -p "$APP"
 # Le code seulement : ni l'environnement Python local, ni les journaux, ni git.
-# Ni le modèle : il est refait ici, à partir des fiches validées de content/faq.md.
+# Ni le modèle : il est entraîné sur l'ordinateur de l'animateur, puis envoyé (deploy/README.md, partie 4).
 tar -C "$SOURCE" --exclude=.venv --exclude=data --exclude=models --exclude=.git --exclude=__pycache__ -cf - . \
   | tar -C "$APP" -xf -
 python3 -m venv "$APP/.venv"
 "$APP/.venv/bin/pip" install -q --upgrade pip
 "$APP/.venv/bin/pip" install -q -r "$APP/requirements.txt"
+mkdir -p "$APP/models"
 chown -R root:root "$APP"
+chmod -R a+rX "$APP"            # lisible par le compte du service (le modèle arrive parfois en 0600)
 
 echo "== 3. Clé Anthropic (workspace « feurisson » avec plafond de dépense : voir deploy/README.md)"
 mkdir -p /etc/feurisson
@@ -51,6 +53,7 @@ echo "== 4. CamemBERT : le modèle entraîné par le groupe"
 # Le modèle n'est pas entraîné ici : sur 2 Go de mémoire, l'entraînement est tué (mesuré en conteneur).
 # Il est entraîné pendant l'activité, sur l'ordinateur de l'animateur, puis envoyé ici (deploy/README.md,
 # « Envoyer le modèle »). Sans lui, Feurisson reconnaît les fiches validées par les mots.
+chmod -R a+rX "$APP/models"
 if [[ -f "$APP/models/faq/model_head.pkl" ]]; then
   echo "Modèle présent : $(cat "$APP/models/faq/feurisson.json" 2>/dev/null | tr -d '\n' | cut -c1-160)"
 else

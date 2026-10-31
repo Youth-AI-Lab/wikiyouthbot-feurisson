@@ -24,15 +24,16 @@ choisit qui répond.
    FAQ, les deux derniers échanges et la question. Pas de recherche web : Feurisson ne cite que les
    sources du groupe.
 
-Sous chaque réponse, la page dit comment elle a été trouvée (« Aucune IA n'a été appelée », ou la
-démarche de Claude).
+Sous chaque réponse, la page dit comment elle a été trouvée : « Fiche reconnue par CamemBERT… Aucune IA
+n'a écrit cette réponse », ou la démarche de Claude.
 
 ## Pour le groupe
 
 - **Écrire la FAQ** : `content/faq.md` (modèle en tête du fichier). Seules les fiches au statut
-  « validée » sont servies au public. Les 9 fiches déjà là sont des brouillons tirés des fiches
-  manuscrites du groupe : à relire, réécrire, mettre en vers ou non, compléter, supprimer.
-- **Apprendre à Feurisson à reconnaître les questions** : l'activité `activite/README.md` (environ 1 h 45).
+  « validée » sont servies au public. Les 9 fiches déjà là sont des brouillons : 8 reprennent des fiches
+  manuscrites du groupe, la dernière renvoie à la carte officielle du niveau du jour. À relire, réécrire,
+  mettre en vers ou non, compléter, supprimer.
+- **Apprendre à Feurisson à reconnaître les questions** : l'activité `activite/README.md` (environ 1 h 30).
   Les jeunes écrivent des façons de poser chaque question, des questions hors FAQ et un test ; l'animateur
   entraîne CamemBERT sur son ordinateur, sans carte graphique ni compte en ligne.
 - **Savoir quelles fiches écrire ensuite** : `outils/questions_sans_fiche.py` liste les questions parties
@@ -42,8 +43,8 @@ démarche de Claude).
 
 | Quoi | Mesure |
 |---|---|
-| Entraînement de CamemBERT (9 fiches brouillons, 44 exemples) | 84 s sur 4 cœurs ; 339 s sur un seul |
-| Test sur 26 questions jamais vues | 19 justes, 7 non reconnues (parties à Claude), **0 mauvaise fiche** |
+| Entraînement de CamemBERT (9 fiches brouillons, 44 exemples) | 84 à 91 s sur 4 cœurs ; 339 s sur un seul |
+| Test sur 26 questions jamais vues | 18 justes, 8 non reconnues (parties à Claude), **0 mauvaise fiche** |
 | Service avec le modèle, conteneur limité à 2 Go et 1 cœur | démarre en 5 s ; réponse de la FAQ en 0,1 à 0,35 s ; environ 960 Mo de mémoire |
 | Entraînement dans ce même conteneur de 2 Go | tué faute de mémoire : on entraîne sur l'ordinateur de l'animateur |
 | Quatre petits modèles qui écrivent (0,5 à 1,7 milliard de paramètres), un cœur | 4 à 28 s par réponse, et des réponses inventées (`activite/mesures-2026-10-31.md`) |
@@ -58,15 +59,23 @@ démarche de Claude).
   relevés le 2026-10-31). Le bloc des consignes, du dataset et de la FAQ est mis en cache d'une question
   à l'autre. Non mesuré avec une vraie clé.
 
-Garde-fous (réglables dans `deploy/feurisson.service`, variables `FEURISSON_*`) :
+Garde-fous. Pour en changer un sur la droplet, ajoutez la ligne `VARIABLE=valeur` dans
+`/etc/feurisson/feurisson.env`, puis `systemctl restart feurisson` (ce fichier n'est pas réécrit par
+l'installation, contrairement à `deploy/feurisson.service`).
 
-| Réglage | Par défaut |
-|---|---|
-| Questions à Claude par visiteur et par heure | 20 |
-| Questions à Claude par jour, tous visiteurs | 400 |
-| Dépense estimée par jour | 1 $ |
-| Longueur d'une question | 500 caractères |
-| Longueur d'une réponse | 900 jetons |
+| Réglage | Variable | Par défaut |
+|---|---|---|
+| Questions par visiteur et par minute (toutes) | `FEURISSON_QUESTIONS_VISITEUR_MINUTE` | 20 |
+| Questions à Claude par visiteur et par heure | `FEURISSON_APPELS_VISITEUR_HEURE` | 20 |
+| Questions à Claude par jour, tous visiteurs | `FEURISSON_APPELS_JOUR` | 400 |
+| Dépense estimée par jour | `FEURISSON_DOLLARS_JOUR` | 1 $ |
+| Erreurs signalées par visiteur et par heure | `FEURISSON_SIGNALEMENTS_VISITEUR_HEURE` | 10 |
+| Longueur d'une question | `FEURISSON_TAILLE_QUESTION` | 500 caractères |
+| Longueur d'une réponse de Claude | `FEURISSON_MAX_TOKENS` | 900 jetons |
+| Taille du journal par jour | `FEURISSON_MO_JOURNAL` | 20 Mo |
+
+Un visiteur, c'est une adresse IP (en IPv6, tout un réseau /64). L'urgence n'est jamais limitée. Le
+service sert au plus 32 connexions à la fois et coupe une requête qui traîne plus de 15 secondes.
 
 Au-delà, Feurisson répond qu'il reprend plus tard ; la FAQ et l'urgence restent servies. Le vrai plafond
 se pose dans la console Anthropic, sur un workspace dédié à Feurisson (voir `deploy/README.md`).

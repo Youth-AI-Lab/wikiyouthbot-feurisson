@@ -39,13 +39,16 @@ Ce que fait le script : Python et Caddy, un fichier d'échange de 2 Go, un compt
 
 Le modèle CamemBERT n'est pas entraîné sur la droplet : avec 2 Go de mémoire, l'entraînement est tué
 (mesuré le 2026-10-31 dans un conteneur limité à 2 Go). Il est entraîné pendant l'activité, sur
-l'ordinateur de l'animateur (`python3 outils/entrainer_faq.py`, voir `activite/README.md`), puis envoyé
+l'ordinateur de l'animateur (`.venv/bin/python outils/entrainer_faq.py`, voir `activite/README.md`), puis envoyé
 (425 Mo), depuis le dossier du projet sur cet ordinateur :
 
 ```bash
-rsync -a --delete models/faq/ root@<adresse de la droplet>:/opt/feurisson/models/faq/
+rsync -a --delete --chmod=D755,F644 models/faq/ root@<adresse de la droplet>:/opt/feurisson/models/faq/
 ssh root@<adresse de la droplet> systemctl restart feurisson
 ```
+
+(`--chmod` rend le modèle lisible par le compte du service : sans lui, il arrive en partie illisible et
+Feurisson revient aux mots. Le dossier `/opt/feurisson/models` est créé par l'installation.)
 
 Envoyez le modèle **et** les fichiers de `content/` avec lesquels il a été entraîné (commit, puis
 `git pull` et l'installation sur la droplet) : le modèle reconnaît les fiches par leur question.

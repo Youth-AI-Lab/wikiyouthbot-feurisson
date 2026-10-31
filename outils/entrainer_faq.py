@@ -34,7 +34,10 @@ REVISION = "103d895e85f97c1265c62efa238d092ecbb0d617"   # version figée (Huggin
 
 
 def exemples(brouillons):
-    fiches = [f for f in lire_faq(CONTENU / "faq.md") if f.validee or brouillons]
+    avertissements = []
+    fiches = [f for f in lire_faq(CONTENU / "faq.md", avertissements) if f.validee or brouillons]
+    for a in avertissements:
+        print(f"Attention : {a}")
     textes, etiquettes = [], []
     for f in fiches:
         for phrase in [f.question] + f.variantes:
@@ -64,6 +67,10 @@ def entrainer(textes, etiquettes, coeurs):
     finally:
         shutil.rmtree(etapes, ignore_errors=True)
     modele.save_pretrained(str(DOSSIER))
+    # safetensors écrit le modèle en 0600 : le service, qui tourne sous un autre compte, ne pourrait pas le lire.
+    for f in DOSSIER.rglob("*"):
+        f.chmod(0o755 if f.is_dir() else 0o644)
+    DOSSIER.chmod(0o755)
     return time.time() - debut
 
 

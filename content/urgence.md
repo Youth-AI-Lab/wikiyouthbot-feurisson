@@ -4,7 +4,9 @@
      Elles décrivent un feu EN COURS : « que faire en cas de début de feu » ou « comment éviter que
      ça brûle » sont des questions de prévention, elles vont à la FAQ ou au modèle. Mieux vaut une
      expression de trop peu qu'une de trop : une urgence non reconnue ici part au modèle, dont les
-     consignes demandent aussi de répondre en clair (règle 1). Une ligne « - … » par expression. -->
+     consignes demandent aussi de répondre en clair (règle 1). Une ligne « - … » par expression.
+     Seuls les messages courts (8 mots au plus) sont concernés. Un « ^ » devant une expression veut dire :
+     seulement en début de message (« au feu ! », mais pas « que faire au feu rouge »). -->
 
 ## Réponse
 
@@ -15,7 +17,7 @@ Ne revenez pas en arrière.
 ## Expressions
 
 - il y a le feu
-- au feu
+- ^au feu
 - est en feu
 - a pris feu
 - je vois de la fumee

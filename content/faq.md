@@ -1,8 +1,8 @@
 <!-- La FAQ de Feurisson, écrite par le groupe.
 
-     Quand une question ressemble assez à une fiche, Feurisson répond avec la fiche, tout de suite,
-     sans appeler d'IA : la réponse est toujours la même, et elle ne coûte rien. Sinon, la question part
-     à l'IA (Claude), qui lit aussi ces fiches.
+     Quand CamemBERT (le modèle que le groupe entraîne) reconnaît la question d'une fiche, Feurisson
+     répond avec la fiche, tout de suite : aucune IA n'écrit la réponse, elle est toujours la même, et
+     elle ne coûte rien. Sinon, la question part à l'IA (Claude), qui lit aussi ces fiches.
 
      Une fiche :
 

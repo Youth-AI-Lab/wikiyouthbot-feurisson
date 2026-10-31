@@ -25,11 +25,15 @@ DEMANDER = """async function demander(question){
 """
 
 # window.storage n'existe que dans les artefacts de claude.ai : ici, le stockage du navigateur du visiteur.
+# Questions, réponses et corrections : le temps de la visite seulement (sessionStorage), pour qu'elles ne
+# restent pas sur un appareil partagé (tablette d'un stand, ordinateur d'une médiathèque). Seuls les
+# réglages de la voix sont gardés.
 STOCKAGE = """<script>
 if(!window.storage){
+  const garde = k => (k === 'feurisson:accent' || k === 'feurisson:voix') ? localStorage : sessionStorage;
   window.storage = {
-    get: async k => { const v = localStorage.getItem(k); return v === null ? null : {value: v}; },
-    set: async (k, v) => { localStorage.setItem(k, v); }
+    get: async k => { const v = garde(k).getItem(k); return v === null ? null : {value: v}; },
+    set: async (k, v) => { garde(k).setItem(k, v); }
   };
 }
 </script>

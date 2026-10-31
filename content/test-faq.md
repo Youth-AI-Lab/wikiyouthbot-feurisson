@@ -19,11 +19,11 @@
 - Que font les forestiers pour prévenir les incendies ?
 
 ## Quelle part des feux de forêt est d'origine humaine en France ?
-- Combien de feux sont causés par l'homme ?
+- Les humains déclenchent-ils la plupart des incendies ?
 - Est-ce que la foudre provoque beaucoup de feux ?
 
 ## Quel est le niveau de danger feu aujourd'hui à La Rochelle ?
-- Peut-on aller en forêt aujourd'hui ?
+- Est-ce que je peux me promener dans les bois cet après-midi ?
 - Quel est le risque incendie aujourd'hui à La Rochelle ?
 
 ## Quelles applications et quels sites alertent sur le risque de feu ?

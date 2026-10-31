@@ -5,9 +5,17 @@ erreurs signalées : de quoi écrire les prochaines fiches.
     python3 outils/questions_sans_fiche.py /var/lib/feurisson      (sur la droplet, en root)
 """
 import json
+import re
 import sys
 from collections import Counter
 from pathlib import Path
+
+CONTROLE = re.compile(r"[\x00-\x1f\x7f-\x9f]")
+
+
+def net(texte):
+    """Ce qu'un visiteur a tapé, sans caractère de contrôle qui pourrait piloter ce terminal."""
+    return CONTROLE.sub(" ", str(texte))
 
 dossier = Path(sys.argv[1] if len(sys.argv) > 1 else "data") / "journal"
 questions, signalements, etages, dollars = Counter(), [], Counter(), 0.0
@@ -32,7 +40,7 @@ if total:
           f"dépense estimée : {dollars:.4f} $")
 print("\nQuestions parties à l'IA, à transformer en fiches :")
 for q, n in questions.most_common(30):
-    print(f"  {n:3d}  {q}")
+    print(f"  {n:3d}  {net(q)}")
 print(f"\nErreurs signalées ({len(signalements)}) :")
 for s in signalements[-20:]:
-    print(f"  {s.get('heure', '')}  « {s.get('question', '')} » : {s.get('correction', '')}")
+    print(f"  {net(s.get('heure', ''))}  « {net(s.get('question', ''))} » : {net(s.get('correction', ''))}")

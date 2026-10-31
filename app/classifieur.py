@@ -6,6 +6,7 @@ encore entraîné), le service reconnaît les fiches par les mots (app/faq.py).
 """
 import os
 import re
+import threading
 from pathlib import Path
 
 from .contenu import normaliser
@@ -32,12 +33,18 @@ class Classifieur:
         from setfit import SetFitModel
         torch.set_num_threads(coeurs)          # la droplet n'a qu'un cœur ; une question à la fois suffit
         self.modele = SetFitModel.from_pretrained(str(DOSSIER), device="cpu", local_files_only=True)
-        self.fiches = {etiquette(f): f for f in fiches}
-        self.inconnues = [e for e in self.modele.labels if e != AUCUNE and e not in self.fiches]
+        # Les fiches que le modèle a apprises. Une fiche ajoutée ou renommée depuis l'entraînement n'en fait
+        # pas partie : le service la reconnaît par les mots, en attendant le prochain modèle.
+        self.connues = {e for e in self.modele.labels if e != AUCUNE}
+        self.fiches = {etiquette(f): f for f in fiches if etiquette(f) in self.connues}
+        # Une question à la fois : sur un seul cœur, les faire en parallèle ne va pas plus vite et multiplie
+        # la mémoire (mesuré : 64 questions simultanées dépassaient 1,5 Go).
+        self.verrou = threading.Lock()
 
     def reconnaitre(self, question):
         """(fiche, probabilité) si le modèle choisit une fiche au-dessus du seuil, sinon (None, probabilité)."""
-        probas = self.modele.predict_proba([question])[0].tolist()
+        with self.verrou:
+            probas = self.modele.predict_proba([question])[0].tolist()
         i = max(range(len(probas)), key=probas.__getitem__)
         fiche = self.fiches.get(self.modele.labels[i])
         if fiche is not None and probas[i] >= SEUIL:

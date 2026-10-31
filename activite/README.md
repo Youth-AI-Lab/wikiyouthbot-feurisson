@@ -1,6 +1,7 @@
 # Activité : apprendre à Feurisson à reconnaître les questions
 
-Pour l'animateur ou l'animatrice. Durée : environ 1 h 45. Groupe : les jeunes qui ont écrit Feurisson
+Pour l'animateur ou l'animatrice. Durée : environ 1 h 30 (plus une préparation la veille). Groupe : les
+jeunes qui ont écrit Feurisson
 (12 à 15 ans), par binômes.
 
 ## Pourquoi cette activité
@@ -19,17 +20,37 @@ réponse. Quand il ne reconnaît pas la question, elle part à Claude.
 
 > ℹ️ **Pourquoi pas un petit modèle qui écrit lui-même les réponses ?** On l'a essayé (2026-10-31) avec
 > quatre petits modèles qui tiennent sur le serveur de Feurisson (Qwen 0,5 à 1,7 milliard de paramètres,
-> Gemma 1 milliard). Ils mettaient 4 à 28 secondes par réponse, et inventaient : l'ONF devenait
-> « l'organisme national de prévention des feux », l'un conseillait d'« éviter de tousser » et de
-> « couvrir l'arbre de terre ». Les réponses sont dans `activite/mesures-2026-10-31.md` : à lire avec le
-> groupe. Régler un modèle qui écrit améliore son style, pas son honnêteté.
+> Gemma 1 milliard). Ils mettaient 4 à 28 secondes par réponse, et inventaient : pour l'un, l'ONF
+> était « l'organisme national de prévention des feux » ; un autre conseillait « Évite de tousser ou de
+> tousser » et, près d'un arbre, « il faut le faire couvrir de terre ». Les réponses sont dans
+> `activite/mesures-2026-10-31.md` : à lire avec le groupe. Nous n'avons pas mesuré ce qu'un réglage fin
+> changerait pour ces modèles ; leurs propres fiches préviennent qu'ils peuvent se tromper (celle de
+> SmolLM2 : « should be used as assistive tools rather than definitive sources of information »).
 
 ## Ce qu'il faut
 
 - La FAQ du groupe : des fiches au statut « validée » dans `content/faq.md` (au moins 5).
 - Des feuilles ou des post-its, et un mur.
-- L'ordinateur de l'animateur, ou son Codespace, avec ce dépôt et ses dépendances installées
-  (`pip install -r requirements.txt`), projeté pour tout le groupe.
+- L'ordinateur de l'animateur, ou son Codespace, avec ce dépôt, projeté pour tout le groupe.
+
+**La veille (20 minutes)**, dans le dossier du projet :
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python outils/entrainer_faq.py
+```
+
+Le premier entraînement télécharge CamemBERT (environ 440 Mo) : autant ne pas le faire devant le groupe.
+
+**Pour montrer Feurisson en partie 1** : la droplet, si les fiches validées y sont déjà ; ou en local,
+avec la clé Anthropic (la question sans fiche part à Claude) :
+
+```bash
+ANTHROPIC_API_KEY=… .venv/bin/python -m app.serveur        # puis http://127.0.0.1:8080
+```
+
+Tant qu'aucune fiche n'est validée, ajoutez `FEURISSON_FAQ_BROUILLONS=1` devant la commande pour
+essayer avec les brouillons.
 
 > ⚠️ **Important.** GitHub demande d'avoir au moins 13 ans : les jeunes n'ouvrent pas de Codespace à
 > leur nom. Ils écrivent sur papier ; c'est l'animateur qui tape les exemples et lance l'entraînement.
@@ -54,8 +75,9 @@ réponse. Quand il ne reconnaît pas la question, elle part à Claude.
 1. Montrez Feurisson et posez trois questions : une qui correspond à une fiche (« Combien de feux sont
    causés par l'homme ? »), une sans fiche (« Comment réagir aux étincelles d'un branchement ? »), une
    urgence (« Au feu ! »).
-2. Sous chaque réponse, faites lire la démarche : « Réponse écrite par le groupe… Aucune IA n'a été
-   appelée », ou la démarche de Claude, ou la réponse d'urgence en clair.
+2. Sous chaque réponse, faites lire la démarche : « Réponse écrite par le groupe… Fiche reconnue par
+   CamemBERT… Aucune IA n'a écrit cette réponse », ou la démarche de Claude, ou la réponse d'urgence en
+   clair.
 3. Lisez ensemble les réponses inventées des petits modèles (`activite/mesures-2026-10-31.md`).
 
 **Ce qu'on doit voir.** Trois réponses venues de trois endroits : la FAQ, Claude, la règle d'urgence.
@@ -71,7 +93,8 @@ réponse. Quand il ne reconnaît pas la question, elle part à Claude.
    `content/hors-faq.md`.
 
 > 💡 **Astuce.** Les meilleures façons de demander n'ont presque aucun mot en commun avec la fiche :
-> « la foudre provoque-t-elle beaucoup de feux ? » pour la fiche sur l'origine humaine.
+> « est-ce que ce sont surtout les gens qui allument les incendies ? » pour la fiche sur l'origine
+> humaine.
 
 ## Partie 3 : écrire le test (15 min)
 
@@ -88,7 +111,7 @@ réponse. Quand il ne reconnaît pas la question, elle part à Claude.
 1. Lancez l'entraînement, projeté :
 
    ```bash
-   python3 outils/entrainer_faq.py
+   .venv/bin/python outils/entrainer_faq.py
    ```
 
 2. Pendant qu'il tourne, expliquez ce qui se passe : le modèle compare des paires d'exemples (deux façons
@@ -96,8 +119,8 @@ réponse. Quand il ne reconnaît pas la question, elle part à Claude.
 
 **Ce qu'on doit voir.** « Modèle entraîné en … s », puis le test : une ligne par question, et le bilan
 « … justes, … non reconnues (elles partiront à Claude), … mauvaise(s) fiche(s) ». Mesuré le 2026-10-31
-avec 9 fiches et 3 ou 4 exemples par fiche : 84 s sur 4 cœurs, et sur 26 questions de test, 19 justes,
-7 non reconnues, 0 mauvaise fiche.
+avec 9 fiches et 3 ou 4 exemples par fiche : 84 à 91 s sur 4 cœurs, et sur 26 questions de test,
+18 justes, 8 non reconnues, 0 mauvaise fiche.
 
 ## Partie 5 : lire le résultat, améliorer, recommencer (25 min)
 
@@ -112,8 +135,9 @@ avec 9 fiches et 3 ou 4 exemples par fiche : 84 s sur 4 cœurs, et sur 26 questi
 
 ## Partie 6 : mettre en ligne (animateur, après la séance)
 
-Commitez les fichiers de `content/`, puis sur la droplet, refaites l'installation (voir
-`deploy/README.md`) : elle entraîne de nouveau le modèle à partir des fiches validées.
+Enregistrez les fichiers de `content/` dans le dépôt (commit), mettez la droplet à jour, puis envoyez
+le modèle que le groupe vient d'entraîner : `deploy/README.md`, parties 4 et 5. La droplet n'entraîne pas
+elle-même : elle n'a pas assez de mémoire pour ça.
 
 ---
 

@@ -1,3 +1,24 @@
+# Réglages communs : un délai pour recevoir une requête (contre les connexions qui traînent exprès),
+# et pas d'adresse IP des visiteurs dans les messages d'erreur de Caddy non plus.
+{
+	servers {
+		timeouts {
+			read_header 10s
+			read_body 15s
+		}
+	}
+	log default {
+		format filter {
+			wrap console
+			fields {
+				request>remote_ip delete
+				request>client_ip delete
+				request>headers>X-Forwarded-For delete
+			}
+		}
+	}
+}
+
 # Caddy obtient le certificat HTTPS tout seul, pourvu que DOMAINE pointe sur la droplet
 # et que les ports 80 et 443 soient ouverts (caddyserver.com/docs/automatic-https).
 DOMAINE {

@@ -34,50 +34,82 @@ class Fiche:
     def validee(self):
         return normaliser(self.statut).startswith("valid")
 
-    def texte_page(self):
-        """La réponse dans le format que la page sait afficher (sections ###), sans appel au modèle."""
+    def texte_page(self, moteur="mots"):
+        """La réponse dans le format que la page sait afficher (sections ###), sans IA qui écrive."""
         sources = "\n".join(f"- {nom} | {url}" if url else f"- {nom}" for nom, url in self.sources)
+        trouvee = ("Fiche reconnue par CamemBERT, le modèle que le groupe a entraîné." if moteur == "camembert"
+                   else "Fiche reconnue en comparant les mots de la question.")
         return (f"###VERS\n{self.reponse.strip()}\n\n"
                 f"###DEMARCHE\n- Réponse écrite par le groupe, dans sa FAQ : « {self.question} ».\n"
-                f"- Aucune IA n'a été appelée pour cette réponse.\n\n"
+                f"- {trouvee}\n- Aucune IA n'a écrit cette réponse.\n\n"
                 f"###SOURCES\n{sources}\n")
 
 
-def lire_faq(chemin):
-    """Lit content/faq.md. Chaque fiche commence par « ## question » ; voir le modèle en tête du fichier."""
+TITRE = re.compile(r"^#{2,}\s*(.*\S)\s*$")
+RUBRIQUES = (("autres facons", "variantes"), ("reponses", "reponse"), ("reponse", "reponse"),
+             ("sources", "sources"), ("source", "sources"), ("statut", "statut"))
+
+
+def rubrique_de(ligne):
+    """(rubrique, reste de la ligne) si la ligne ouvre une rubrique : « Réponse : … », « Sources »,
+    « Statut : … », « Autres façons de le demander »… Le libellé avant les deux-points doit être exactement
+    celui de la rubrique : « Sources d'inspiration : … » dans une réponse n'en ouvre pas."""
+    libelle = normaliser(ligne.split(":", 1)[0])
+    reste = ligne.split(":", 1)[1].strip() if ":" in ligne else ""
+    for debut, nom in RUBRIQUES:
+        if libelle == debut or (nom == "variantes" and libelle.startswith(debut)):
+            return nom, reste
+    return None, ""
+
+
+def source_de(texte):
+    """« Nom | lien », « Nom : lien », « lien » ou « Nom » -> (nom, lien ou "")."""
+    lien = URL.search(texte)
+    if not lien:
+        return texte.strip(), ""
+    nom = (texte[:lien.start()] + texte[lien.end():]).strip(" |:-")
+    return nom or lien.group(0), lien.group(0)
+
+
+def lire_faq(chemin, avertissements=None):
+    """Lit content/faq.md. Chaque fiche commence par « ## question » ; voir le modèle en tête du fichier.
+    Les fiches illisibles (sans réponse) sont ignorées et signalées dans `avertissements`."""
     texte = sans_commentaires(chemin.read_text(encoding="utf-8"))
     fiches, fiche, rubrique = [], None, None
     for n, ligne in enumerate(texte.splitlines(), 1):
         brute = ligne.strip()
-        if brute.startswith("## "):
-            fiche = Fiche(question=brute[3:].strip(), ligne=n)
+        titre = TITRE.match(brute)
+        if titre:
+            fiche = Fiche(question=titre.group(1), ligne=n)
             fiches.append(fiche)
             rubrique = None
             continue
-        if fiche is None:
+        if fiche is None or not brute:
             continue
-        cle = normaliser(brute.split(":", 1)[0]) if ":" in brute else ""
-        if cle.startswith("autres facons"):
-            rubrique = "variantes"
-        elif cle == "reponse":
-            rubrique = "reponse"
-            reste = brute.split(":", 1)[1].strip()
-            if reste:
-                fiche.reponse += reste + "\n"
-        elif cle == "sources" or cle == "source":
-            rubrique = "sources"
-        elif cle == "statut":
-            fiche.statut = brute.split(":", 1)[1].strip()
+        nom, reste = rubrique_de(brute)
+        if nom == "statut":
+            fiche.statut = reste or fiche.statut
             rubrique = None
-        elif rubrique == "variantes" and brute.startswith("- "):
+        elif nom:
+            rubrique = nom
+            if reste and nom == "reponse":
+                fiche.reponse += reste + "\n"
+            elif reste and nom == "sources":
+                fiche.sources.append(source_de(reste))
+        elif rubrique == "variantes" and brute.startswith(("- ", "* ")):
             fiche.variantes.append(brute[2:].strip())
-        elif rubrique == "sources" and brute.startswith("- "):
-            nom, _, url = brute[2:].partition("|")
-            fiche.sources.append((nom.strip(), url.strip()))
+        elif rubrique == "sources" and brute.startswith(("- ", "* ")):
+            fiche.sources.append(source_de(brute[2:]))
         elif rubrique == "reponse":
             fiche.reponse += ligne.rstrip() + "\n"
-    for fiche in fiches:
-        fiche.reponse = fiche.reponse.strip()
+    for f in fiches:
+        f.reponse = f.reponse.strip()
+        if avertissements is not None:
+            if not f.reponse:
+                avertissements.append(f"faq.md, ligne {f.ligne} : « {f.question} » n'a pas de réponse lisible, "
+                                      "fiche ignorée (il manque « Réponse : » ?)")
+            elif not f.sources:
+                avertissements.append(f"faq.md, ligne {f.ligne} : « {f.question} » n'a pas de source")
     return [f for f in fiches if f.question and f.reponse]
 
 
@@ -111,7 +143,8 @@ class Contenu:
     def __init__(self, dossier=CONTENU):
         self.consignes = sans_commentaires((dossier / "consignes.md").read_text(encoding="utf-8"))
         self.dataset = sans_commentaires((dossier / "dataset.md").read_text(encoding="utf-8"))
-        self.fiches = lire_faq(dossier / "faq.md")
+        self.avertissements = []
+        self.fiches = lire_faq(dossier / "faq.md", self.avertissements)
         urgence = dossier / "urgence.md"
         self.urgence = sans_commentaires(urgence.read_text(encoding="utf-8")) if urgence.exists() else ""
 

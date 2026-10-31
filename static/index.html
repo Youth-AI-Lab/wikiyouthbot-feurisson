@@ -404,9 +404,10 @@ En cas d'urgence : le 18 ou le 112.</div>
 
 <script>
 if(!window.storage){
+  const garde = k => (k === 'feurisson:accent' || k === 'feurisson:voix') ? localStorage : sessionStorage;
   window.storage = {
-    get: async k => { const v = localStorage.getItem(k); return v === null ? null : {value: v}; },
-    set: async (k, v) => { localStorage.setItem(k, v); }
+    get: async k => { const v = garde(k).getItem(k); return v === null ? null : {value: v}; },
+    set: async (k, v) => { garde(k).setItem(k, v); }
   };
 }
 </script>

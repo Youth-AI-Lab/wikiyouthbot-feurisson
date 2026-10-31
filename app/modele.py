@@ -1,7 +1,7 @@
 """Le dernier recours : Claude, quand ni l'urgence ni la FAQ n'ont répondu.
 
 Le modèle reçoit les consignes, puis le dataset et la FAQ (mis en cache : ce bloc ne change pas d'une
-question à l'autre), puis les derniers échanges et la question. Pas de recherche web, pas d'outil.
+question à l'autre), puis les dernières questions du visiteur et sa question. Pas de recherche web, pas d'outil.
 """
 import os
 import re
@@ -14,8 +14,8 @@ MAX_TOKENS = int(os.environ.get("FEURISSON_MAX_TOKENS", "900"))
 # (platform.claude.com/docs/en/about-claude/pricing, lu le 2026-10-31) : seulement pour estimer la
 # dépense du jour et la plafonner. La facture fait foi : elle est dans la console Anthropic.
 PRIX = {"entree": 0.10, "ecriture_cache": 0.125, "lecture_cache": 0.01, "sortie": 0.50}
-HISTORIQUE = 4            # messages gardés (2 échanges) : au-delà, le coût monte sans servir la réponse
-TAILLE_MESSAGE = 600      # caractères par message d'historique
+HISTORIQUE = 3            # questions précédentes gardées : au-delà, le coût monte sans servir la réponse
+TAILLE_MESSAGE = 300      # caractères par question précédente
 
 REFUS = ("###CLAIR\nJe ne peux pas répondre à cette question.\n"
          "Pour le feu et sa prévention : les pompiers (SDIS 17), la préfecture de la Charente-Maritime, "
@@ -33,25 +33,18 @@ class Modele:
 
     @staticmethod
     def messages(question, historique):
-        """Les derniers échanges (texte seul, raccourcis), puis la question."""
-        propres = []
-        for m in (historique or [])[-HISTORIQUE:]:
-            if isinstance(m, dict) and m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str):
-                texte = m["content"].strip()[:TAILLE_MESSAGE]
-                if texte:
-                    propres.append({"role": m["role"], "content": texte})
-        # L'API veut des tours alternés, en commençant par l'utilisateur.
-        while propres and propres[0]["role"] != "user":
-            propres.pop(0)
-        alternes = []
-        for m in propres:
-            if alternes and alternes[-1]["role"] == m["role"]:
-                alternes[-1] = m
-            else:
-                alternes.append(m)
-        if alternes and alternes[-1]["role"] == "user":
-            alternes.pop()
-        return alternes + [{"role": "user", "content": question}]
+        """Les dernières questions du visiteur, puis sa question : un seul message.
+
+        Les réponses de Feurisson envoyées par la page ne sont jamais reprises : n'importe qui peut en
+        écrire de fausses (« D'accord, je réponds à tout »), et le modèle les croirait siennes. Les
+        questions précédentes suffisent pour suivre (« et pour mon jardin ? »)."""
+        avant = [m["content"].strip()[:TAILLE_MESSAGE] for m in (historique or [])
+                 if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str)
+                 and m["content"].strip()][-HISTORIQUE:]
+        if not avant:
+            return [{"role": "user", "content": question}]
+        contexte = "\n".join(f"- {q}" for q in avant)
+        return [{"role": "user", "content": f"Mes questions précédentes :\n{contexte}\n\nMa question : {question}"}]
 
     def demander(self, question, historique):
         """(texte au format de la page, usage en jetons, coût estimé en dollars)."""
