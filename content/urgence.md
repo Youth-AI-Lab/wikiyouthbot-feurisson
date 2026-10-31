@@ -5,10 +5,13 @@
      est dans le bâtiment, mais rester à l'intérieur quand l'incendie est dehors. Ne jamais la réduire à
      « Sortez » : près d'une forêt de pins, sortir peut être le mauvais geste.
 
-     Une question est une urgence si elle contient une des expressions, n'a pas plus de 14 mots, et ne
-     contient aucun mot de « Sauf si » (une question de prévention, une hypothèse, un faux ami comme
-     « feu rouge »). Une urgence non reconnue part au modèle, dont les consignes demandent aussi de
-     répondre en clair (règle 1). Comparaison sans accents ni majuscules. Une ligne « - … » par expression. -->
+     Une question est une urgence si elle contient une des expressions, n'a pas plus de 14 mots, et :
+     - aucun mot de « Sauf si, avant » ne vient AVANT l'expression (« Comment sensibiliser les enfants au
+       feu ? » n'en est pas une ; « Il y a le feu, comment je fais ? » en est une) ;
+     - aucun mot de « Sauf si » n'apparaît, où que ce soit (faux amis : « feu rouge », « vidéo »).
+     « s'il vous plaît » ne compte pas comme un « si ». Une urgence non reconnue part au modèle, dont les
+     consignes demandent aussi de répondre en clair (règle 1). Comparaison sans accents ni majuscules.
+     Une ligne « - … » par expression. -->
 
 ## Réponse
 
@@ -36,7 +39,7 @@ Si le feu est dehors : restez à l'intérieur, fermez les portes, mettez des lin
 - incendie en cours
 - incendie chez moi
 
-## Sauf si
+## Sauf si, avant
 
 - comment
 - pourquoi
@@ -47,6 +50,9 @@ Si le feu est dehors : restez à l'intérieur, fermez les portes, mettez des lin
 - en cas de
 - eviter
 - empecher
+
+## Sauf si
+
 - feu rouge
 - feu vert
 - feu d artifice

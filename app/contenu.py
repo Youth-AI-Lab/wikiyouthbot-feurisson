@@ -40,7 +40,9 @@ class Fiche:
         sources = "\n".join(f"- {nom} | {url}" if url else f"- {nom}" for nom, url in self.sources)
         trouvee = ("Fiche reconnue par CamemBERT, le modèle que le groupe a entraîné." if moteur == "camembert"
                    else "Fiche reconnue en comparant les mots de la question.")
-        return (f"###VERS\n{self.reponse.strip()}\n\n"
+        # Un « ### » en tête de ligne serait pris par la page pour une nouvelle section : la suite disparaîtrait.
+        reponse = re.sub(r"(?m)^\s*#+\s*", "", self.reponse.strip())
+        return (f"###VERS\n{reponse}\n\n"
                 f"###DEMARCHE\n- Réponse écrite par le groupe, dans sa FAQ : « {self.question} ».\n"
                 f"- {trouvee}\n- Aucune IA n'a écrit cette réponse.\n\n"
                 f"###SOURCES\n{sources}\n")

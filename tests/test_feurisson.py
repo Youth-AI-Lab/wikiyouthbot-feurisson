@@ -121,7 +121,9 @@ class TestReconnaissance(unittest.TestCase):
         for oui in ["Au feu ! la cuisine est en feu", "Je vois de la fumée chez le voisin", "Il y a le feu au local",
                     "Au secours, au feu !", "Vite, au feu !!", "il y a de la fumée", "y a le feu", "ça brûle",
                     "La forêt derrière chez moi est en feu, je fais quoi ?",
-                    "je suis coincé dans la maison il y a de la fumée"]:
+                    "je suis coincé dans la maison il y a de la fumée", "Il y a le feu, comment je fais ?",
+                    "Aidez-moi s'il vous plaît, il y a le feu", "Il y a le feu, qu'est-ce que je fais ?",
+                    "La forêt brûle, quand est-ce que les pompiers arrivent ?"]:
             self.assertTrue(self.urgence.detecter(oui), oui)
         for non in ["Que faire en cas de début de départ de feu ?", "Comment éviter que ça brûle ?",
                     "Quels sont les bons réflexes si un feu approche ?", "Que faire au feu rouge ?",
@@ -222,6 +224,9 @@ class TestRobustesse(unittest.TestCase):
         q1, q2 = lire_faq(f, avertissements)
         self.assertIn("deuxième vers.\n\nTroisième vers.", q1.reponse, "la strophe est gardée")
         self.assertIn("### Pour aller plus loin", q1.reponse)
+        page = q1.texte_page().split("###DEMARCHE")[0]
+        self.assertIn("Pour aller plus loin\nEncore.", page, "un « ### » ne coupe pas la réponse sur la page")
+        self.assertEqual(q1.texte_page().count("###"), 3)
         self.assertTrue(q1.validee)
         self.assertEqual(q1.sources, [("SDIS 17", "https://www.sdis17.fr")])
         self.assertFalse(q2.validee, "« validation en cours » n'est pas « validée »")
