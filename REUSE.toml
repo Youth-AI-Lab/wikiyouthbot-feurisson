@@ -1,0 +1,22 @@
+version = 1
+SPDX-PackageName = "wikiyouthbot-feurisson"
+SPDX-PackageSupplier = "Youth AI Lab (Erasmus+)"
+SPDX-PackageDownloadLocation = "https://github.com/Youth-AI-Lab/wikiyouthbot-feurisson"
+
+# Les licences des autres dépôts du projet : textes et images en CC BY-SA 4.0, programmes et
+# configuration en EUPL-1.2.
+
+# Textes et images : ce qu'a écrit et dessiné le groupe de jeunes (consignes, dataset, FAQ, page de
+# Feurisson avec sa mascotte), l'activité, les mesures et les modes d'emploi : CC BY-SA 4.0.
+[[annotations]]
+path = ["README.md", "deploy/README.md", "activite/**", "content/**", "static/**", "outils/page-du-groupe.html"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Youth AI Lab partners"
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# Programmes et configuration : le service, les outils, les tests, l'installation : EUPL-1.2.
+[[annotations]]
+path = ["app/**", "outils/*.py", "tests/**", "deploy/installer.sh", "deploy/feurisson.service", "deploy/Caddyfile", "requirements.txt", ".gitignore", "REUSE.toml"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Youth AI Lab partners"
+SPDX-License-Identifier = "EUPL-1.2"

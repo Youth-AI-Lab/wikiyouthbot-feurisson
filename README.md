@@ -147,5 +147,9 @@ en public.
 
 ## Licence
 
-À décider avec le groupe et le CSC Vent des Îles : le contenu (consignes, dataset, mascotte) est celui
-du groupe.
+Comme les autres dépôts du projet : textes et images (ce qu'a écrit et dessiné le groupe, l'activité,
+les modes d'emploi) en [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt) ; programmes et configuration en
+[EUPL-1.2](LICENSES/EUPL-1.2.txt). Le détail fichier par fichier est dans [`REUSE.toml`](REUSE.toml).
+
+Le modèle entraîné (`models/faq/`, pas dans ce dépôt) part de `dangvantuan/sentence-camembert-base`,
+publié sous licence Apache 2.0 : à garder avec le modèle si on le diffuse.
