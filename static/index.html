@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Feurisson, le chatbot qui répond en vers</title>
 <link rel="icon" id="favicon" href="data:,">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --ciel:#EDF6F8;
@@ -509,7 +506,7 @@ async function demander(question){
   });
   if(!rep.ok) throw new Error(rep.status);
   const data = await rep.json();
-  return {texte: data.texte || "", reels: new Set(data.reels || [])};
+  return {texte: data.texte || "", reels: new Set(data.reels || []), etage: data.etage || ""};
 }
 
 function decouper(t){
@@ -797,11 +794,13 @@ async function envoyer(question){
     let r, reels;
     if(cache[cle]){ r = cache[cle].r; reels = new Set(cache[cle].reels); }
     else{
-      const {texte, reels:rs} = await demander(question);
+      const {texte, reels:rs, etage} = await demander(question);
       r = decouper(texte); reels = rs;
-      cache[cle] = {r, reels:[...rs]};
-      const ks = Object.keys(cache); if(ks.length>40) delete cache[ks[0]];
-      await garder(CLE_CACHE, cache);
+      if(etage !== "limite"){
+        cache[cle] = {r, reels:[...rs]};
+        const ks = Object.keys(cache); if(ks.length>40) delete cache[ks[0]];
+        await garder(CLE_CACHE, cache);
+      }
     }
     afficherReponse(tour, attente, r, reels, question);
     histoire.push({role:"user",content:question});

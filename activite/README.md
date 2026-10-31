@@ -120,7 +120,8 @@ essayer avec les brouillons.
 **Ce qu'on doit voir.** « Modèle entraîné en … s », puis le test : une ligne par question, et le bilan
 « … justes, … non reconnues (elles partiront à Claude), … mauvaise(s) fiche(s) ». Mesuré le 2026-10-31
 avec 9 fiches et 3 ou 4 exemples par fiche : 84 à 91 s sur 4 cœurs, et sur 26 questions de test,
-18 justes, 8 non reconnues, 0 mauvaise fiche.
+18 justes, 8 non reconnues, 0 mauvaise fiche. Ces questions de départ ressemblent beaucoup aux exemples :
+le test écrit par le groupe (partie 3) sera plus exigeant, et c'est voulu.
 
 ## Partie 5 : lire le résultat, améliorer, recommencer (25 min)
 

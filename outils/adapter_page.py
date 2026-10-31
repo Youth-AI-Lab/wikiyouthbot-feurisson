@@ -19,7 +19,7 @@ DEMANDER = """async function demander(question){
   });
   if(!rep.ok) throw new Error(rep.status);
   const data = await rep.json();
-  return {texte: data.texte || "", reels: new Set(data.reels || [])};
+  return {texte: data.texte || "", reels: new Set(data.reels || []), etage: data.etage || ""};
 }
 
 """
@@ -76,7 +76,23 @@ def adapter(page):
                      "fetch('/api/signal',{method:'POST',headers:{'Content-Type':'application/json'},"
                      "body:JSON.stringify({question, reponse:(r.clair||r.vers).slice(0,500), correction:quoi.trim()})}).catch(()=>{});\n"
                      "    sig.replaceWith(el('div','merci','Merci, c\\'est noté : le groupe relira votre correction")
-    # 7. Plus de tiret cadratin dans ce qui s'affiche.
+    # 7. Une réponse « revenez plus tard » (limites) n'est pas gardée en cache : redemander doit réessayer.
+    page = remplacer(page, """      const {texte, reels:rs} = await demander(question);
+      r = decouper(texte); reels = rs;
+      cache[cle] = {r, reels:[...rs]};
+      const ks = Object.keys(cache); if(ks.length>40) delete cache[ks[0]];
+      await garder(CLE_CACHE, cache);""", """      const {texte, reels:rs, etage} = await demander(question);
+      r = decouper(texte); reels = rs;
+      if(etage !== "limite"){
+        cache[cle] = {r, reels:[...rs]};
+        const ks = Object.keys(cache); if(ks.length>40) delete cache[ks[0]];
+        await garder(CLE_CACHE, cache);
+      }""")
+    # 8. Pas de polices chargées chez Google : l'adresse de chaque visiteur partirait chez Google. La page
+    #    prend les polices de l'appareil.
+    page = re.sub(r'<link rel="preconnect" href="https://fonts\.(googleapis|gstatic)\.com"[^>]*>\n?', "", page)
+    page = re.sub(r'<link href="https://fonts\.googleapis\.com/[^"]*" rel="stylesheet">\n?', "", page)
+    # 9. Plus de tiret cadratin dans ce qui s'affiche.
     page = remplacer(page, "<title>Feurisson — le chatbot qui répond en vers</title>",
                      "<title>Feurisson, le chatbot qui répond en vers</title>")
     page = remplacer(page, "se retient mieux — mais rimer", "se retient mieux, mais rimer")
@@ -85,7 +101,8 @@ def adapter(page):
     for i in restes:
         if "[,;:.!?…—-]" not in page[i - 12:i + 6]:
             sys.exit(f"Tiret cadratin restant : {page[i - 40:i + 30]!r}")
-    for interdit in ("api.anthropic.com", "x-api-key", "anthropic-dangerous-direct-browser-access", "cleFeu"):
+    for interdit in ("api.anthropic.com", "x-api-key", "anthropic-dangerous-direct-browser-access", "cleFeu",
+                     "fonts.googleapis.com", "fonts.gstatic.com"):
         if interdit in page:
             sys.exit(f"Reste de l'ancien appel dans la page : {interdit}")
     return page

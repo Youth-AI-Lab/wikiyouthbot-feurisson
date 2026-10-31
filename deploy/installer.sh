@@ -67,6 +67,13 @@ systemctl daemon-reload
 systemctl enable feurisson > /dev/null
 systemctl restart feurisson
 
+# Les journaux de plus de 30 jours sont effacés chaque jour, même quand le service est arrêté.
+cat > /etc/cron.daily/feurisson-journal <<'TACHE'
+#!/bin/sh
+find /var/lib/feurisson/journal -name '*.jsonl' -mtime +30 -delete 2> /dev/null || true
+TACHE
+chmod 755 /etc/cron.daily/feurisson-journal
+
 echo "== 6. Caddy : HTTPS pour $DOMAINE, vers le service"
 sed "s/DOMAINE/$DOMAINE/" "$APP/deploy/Caddyfile" > /etc/caddy/Caddyfile
 systemctl reload caddy || systemctl restart caddy

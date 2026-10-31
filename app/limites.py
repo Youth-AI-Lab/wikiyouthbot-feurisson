@@ -7,9 +7,11 @@ import threading
 import time
 from collections import defaultdict, deque
 
-QUESTIONS_PAR_VISITEUR_MINUTE = int(os.environ.get("FEURISSON_QUESTIONS_VISITEUR_MINUTE", "20"))
+# Un « visiteur » est une adresse IP : le jour d'une démonstration, toute une salle sur le même Wi-Fi n'en fait
+# qu'un. Les valeurs par défaut le permettent ; le vrai plafond de dépense reste celui du jour.
+QUESTIONS_PAR_VISITEUR_MINUTE = int(os.environ.get("FEURISSON_QUESTIONS_VISITEUR_MINUTE", "60"))
 SIGNALEMENTS_PAR_VISITEUR_HEURE = int(os.environ.get("FEURISSON_SIGNALEMENTS_VISITEUR_HEURE", "10"))
-APPELS_PAR_VISITEUR = int(os.environ.get("FEURISSON_APPELS_VISITEUR_HEURE", "20"))
+APPELS_PAR_VISITEUR = int(os.environ.get("FEURISSON_APPELS_VISITEUR_HEURE", "100"))
 APPELS_PAR_JOUR = int(os.environ.get("FEURISSON_APPELS_JOUR", "400"))
 DOLLARS_PAR_JOUR = float(os.environ.get("FEURISSON_DOLLARS_JOUR", "1.00"))
 

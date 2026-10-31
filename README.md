@@ -13,9 +13,10 @@ choisit qui répond.
 
 ## Qui répond à une question
 
-1. **Une urgence en cours** (« au feu », « je vois de la fumée »…) : une réponse fixe, en clair, tout de
-   suite : « Appelez le 18 ou le 112. Sortez. Ne revenez pas en arrière. » C'est la règle 1 des
-   consignes du groupe. Les expressions sont dans `content/urgence.md`.
+1. **Une urgence en cours** (« au feu », « je vois de la fumée »…, dans un message court qui n'est pas
+   une question de prévention) : une réponse fixe, en clair, tout de suite : appeler le 18 ou le 112 ;
+   sortir si le feu est dans le bâtiment, rester à l'intérieur s'il est dehors. Elle suit la fiche du
+   groupe sur les bons réflexes (Service Public, SDIS). Les expressions sont dans `content/urgence.md`.
 2. **La FAQ du groupe** (`content/faq.md`), reconnue par **CamemBERT**, un modèle de langue français que
    le groupe règle lui-même (activité dans `activite/`). Il ne fait que choisir une fiche validée par le
    groupe, ou « aucune » : il ne peut rien inventer. La réponse arrive en un tiers de seconde et ne coûte
@@ -44,7 +45,7 @@ n'a écrit cette réponse », ou la démarche de Claude.
 | Quoi | Mesure |
 |---|---|
 | Entraînement de CamemBERT (9 fiches brouillons, 44 exemples) | 84 à 91 s sur 4 cœurs ; 339 s sur un seul |
-| Test sur 26 questions jamais vues | 18 justes, 8 non reconnues (parties à Claude), **0 mauvaise fiche** |
+| Test sur 26 questions jamais vues | 18 justes, 8 non reconnues (parties à Claude), **0 mauvaise fiche**. Ces questions de départ ressemblent beaucoup aux exemples : le score surestime ce que le modèle reconnaît d'une question vraiment nouvelle. Le test que le groupe écrira lui-même dira mieux |
 | Service avec le modèle, conteneur limité à 2 Go et 1 cœur | démarre en 5 s ; réponse de la FAQ en 0,1 à 0,35 s ; environ 960 Mo de mémoire |
 | Entraînement dans ce même conteneur de 2 Go | tué faute de mémoire : on entraîne sur l'ordinateur de l'animateur |
 | Quatre petits modèles qui écrivent (0,5 à 1,7 milliard de paramètres), un cœur | 4 à 28 s par réponse, et des réponses inventées (`activite/mesures-2026-10-31.md`) |
@@ -65,8 +66,8 @@ l'installation, contrairement à `deploy/feurisson.service`).
 
 | Réglage | Variable | Par défaut |
 |---|---|---|
-| Questions par visiteur et par minute (toutes) | `FEURISSON_QUESTIONS_VISITEUR_MINUTE` | 20 |
-| Questions à Claude par visiteur et par heure | `FEURISSON_APPELS_VISITEUR_HEURE` | 20 |
+| Questions par visiteur et par minute (toutes) | `FEURISSON_QUESTIONS_VISITEUR_MINUTE` | 60 |
+| Questions à Claude par visiteur et par heure | `FEURISSON_APPELS_VISITEUR_HEURE` | 100 |
 | Questions à Claude par jour, tous visiteurs | `FEURISSON_APPELS_JOUR` | 400 |
 | Dépense estimée par jour | `FEURISSON_DOLLARS_JOUR` | 1 $ |
 | Erreurs signalées par visiteur et par heure | `FEURISSON_SIGNALEMENTS_VISITEUR_HEURE` | 10 |
@@ -74,10 +75,13 @@ l'installation, contrairement à `deploy/feurisson.service`).
 | Longueur d'une réponse de Claude | `FEURISSON_MAX_TOKENS` | 900 jetons |
 | Taille du journal par jour | `FEURISSON_MO_JOURNAL` | 20 Mo |
 
-Un visiteur, c'est une adresse IP (en IPv6, tout un réseau /64). L'urgence n'est jamais limitée. Le
-service sert au plus 32 connexions à la fois et coupe une requête qui traîne plus de 15 secondes.
+Un visiteur, c'est une adresse IP (en IPv6, tout un réseau /64). Le jour d'une démonstration, toute une
+salle sur le même Wi-Fi compte pour un seul visiteur : relevez les deux premières limites si besoin.
+L'urgence n'est jamais limitée ; la FAQ l'est par la limite par minute, pas par celles de Claude. Le
+service sert au plus 32 connexions à la fois ; Caddy reçoit chaque requête en entier avant de la lui
+passer, et coupe celles qui traînent.
 
-Au-delà, Feurisson répond qu'il reprend plus tard ; la FAQ et l'urgence restent servies. Le vrai plafond
+Au-delà, Feurisson répond qu'il reprend plus tard, et rappelle le 18, le 119 et le 3018. Le vrai plafond
 se pose dans la console Anthropic, sur un workspace dédié à Feurisson (voir `deploy/README.md`).
 
 ## Les jeunes et les données
@@ -87,10 +91,19 @@ l'organisation (CSC Vent des Îles), à prendre avant de diffuser l'adresse.
 
 - **Dire que c'est une IA** : obligatoire pour un chatbot public (politique d'utilisation d'Anthropic).
   Un bandeau le dit en haut de la page, avec « N'écrivez aucune information personnelle » et le 18 / 112.
-- **Ce qui part chez Anthropic** : les questions qui passent par Claude (pas celles de la FAQ).
+- **Ce qui part chez Anthropic** : les questions qui passent par Claude, avec les trois questions
+  précédentes du visiteur (même celles auxquelles la FAQ a répondu).
 - **Ce que garde le serveur** : un journal des questions et des erreurs signalées, sans adresse IP ni
-  identifiant de visiteur, effacé après 30 jours. Un visiteur peut écrire une information personnelle
-  malgré le bandeau : elle reste dans le journal jusque-là.
+  identifiant de visiteur, effacé après 30 jours (une tâche quotidienne le fait même service arrêté). Un
+  visiteur peut écrire une information personnelle malgré le bandeau : elle reste dans le journal
+  jusque-là.
+- **Ce que garde le navigateur** : les réponses le temps de la visite (fermer l'onglet les efface), et
+  les réglages de la voix.
+- **La dictée et le réveil vocal** de la page utilisent la reconnaissance vocale du navigateur : dans
+  Chrome, la voix part chez Google. La page ne charge plus de polices chez Google.
+- **Un jeune en détresse** : les consignes demandent de l'orienter vers un adulte de confiance, le 119
+  ou le 3018 (numéros relevés le 2026-10-31 sur service-public.gouv.fr et solidarites.gouv.fr) ; les
+  messages de limite les rappellent aussi.
 - **Les corrections signalées** ne changent plus les réponses suivantes (n'importe quel visiteur aurait
   pu en dicter) : elles vont au journal, et le groupe décide.
 - Les consignes du groupe gardent ses règles de protection : urgence en clair, souffrance personnelle
@@ -103,7 +116,7 @@ l'organisation (CSC Vent des Îles), à prendre avant de diffuser l'adresse.
 | Fichier | Ce que c'est |
 |---|---|
 | `content/consignes.md` | Les consignes du groupe, reprises de sa page. Changé : pas de recherche web, fiches « IA » jamais présentées comme des faits, corrections relues par le groupe, tirets cadratins retirés |
-| `content/dataset.md` | Les 35 fiches et les 3 fiches questions-réponses du groupe, copie exacte de la fiche du projet |
+| `content/dataset.md` | Les fiches du groupe et ses 3 fiches questions-réponses, copie exacte de la fiche du projet |
 | `content/faq.md` | La FAQ, à écrire par le groupe |
 | `content/hors-faq.md`, `content/test-faq.md` | Les exemples hors FAQ et les questions de test de l'activité |
 | `content/urgence.md` | La réponse d'urgence et ses expressions |

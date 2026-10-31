@@ -32,7 +32,12 @@ DOMAINE {
 		Permissions-Policy "camera=(), geolocation=()"
 		-Server
 	}
-	reverse_proxy 127.0.0.1:8080
+	# Caddy reçoit toute la requête avant de la passer au service : une requête envoyée goutte à goutte
+	# occupe Caddy, pas l'une des 32 places du service.
+	# (Caddy 2.6, celui d'Ubuntu 24.04 : « buffer_requests » ; à partir de Caddy 2.7 : « request_buffers 16KB ».)
+	reverse_proxy 127.0.0.1:8080 {
+		buffer_requests
+	}
 	log {
 		# Pas d'adresse IP des visiteurs dans les journaux de Caddy.
 		format filter {

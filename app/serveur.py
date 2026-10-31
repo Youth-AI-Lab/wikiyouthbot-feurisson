@@ -41,12 +41,16 @@ CONNEXIONS = int(os.environ.get("FEURISSON_CONNEXIONS", "32"))   # connexions se
 DELAI = 15                                                       # secondes pour envoyer une requête
 
 RAPPEL = "En cas d'urgence : le 18 ou le 112."
+# Même quand Claude ne répond plus (limites), un jeune en détresse trouve à qui parler (numéros relevés le
+# 2026-10-31 sur service-public.gouv.fr et solidarites.gouv.fr).
+AIDE = ("Si ça ne va pas, parlez-en à un adulte de confiance, ou appelez le 119 (enfance en danger, gratuit, "
+        "jour et nuit) ou le 3018 (harcèlement, gratuit, de 9 h à 23 h).")
 LIMITE = {
     "visiteur": "###CLAIR\nVous m'avez posé beaucoup de questions en une heure.\n"
-                "Revenez un peu plus tard, ou posez-les aux jeunes qui m'ont écrit.\n" + RAPPEL + "\n",
+                "Revenez un peu plus tard, ou posez-les aux jeunes qui m'ont écrit.\n" + RAPPEL + "\n" + AIDE + "\n",
     "jour": "###CLAIR\nJ'ai beaucoup parlé aujourd'hui : je reprends demain.\n"
-            "Les jeunes qui m'ont écrit peuvent vous répondre.\n" + RAPPEL + "\n",
-    "rafale": "###CLAIR\nDoucement : une question à la fois.\nRéessayez dans une minute.\n" + RAPPEL + "\n",
+            "Les jeunes qui m'ont écrit peuvent vous répondre.\n" + RAPPEL + "\n" + AIDE + "\n",
+    "rafale": "###CLAIR\nDoucement : une question à la fois.\nRéessayez dans une minute.\n" + RAPPEL + "\n" + AIDE + "\n",
 }
 
 
@@ -130,7 +134,9 @@ class Requetes(BaseHTTPRequestHandler):
     timeout = DELAI          # une requête qui traîne (corps envoyé goutte à goutte) est coupée
 
     def log_message(self, fmt, *args):   # pas d'adresse IP dans les journaux du service
-        sys.stderr.write("%s %s\n" % (self.command, self.path.split("?")[0]))
+        commande = getattr(self, "command", None) or "-"
+        chemin = (getattr(self, "path", None) or "-").split("?")[0]
+        sys.stderr.write("%s %s\n" % (commande, chemin))
 
     def _envoyer(self, code, corps=b"", type_="application/json; charset=utf-8"):
         self.send_response(code)

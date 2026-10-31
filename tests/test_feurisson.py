@@ -118,14 +118,22 @@ class TestReconnaissance(unittest.TestCase):
             self.assertIsNone(self.fiche(question), question)
 
     def test_urgence(self):
-        for oui in ["Au feu ! la cuisine est en feu", "Je vois de la fumée chez le voisin", "Il y a le feu au local"]:
+        for oui in ["Au feu ! la cuisine est en feu", "Je vois de la fumée chez le voisin", "Il y a le feu au local",
+                    "Au secours, au feu !", "Vite, au feu !!", "il y a de la fumée", "y a le feu", "ça brûle",
+                    "La forêt derrière chez moi est en feu, je fais quoi ?",
+                    "je suis coincé dans la maison il y a de la fumée"]:
             self.assertTrue(self.urgence.detecter(oui), oui)
         for non in ["Que faire en cas de début de départ de feu ?", "Comment éviter que ça brûle ?",
                     "Quels sont les bons réflexes si un feu approche ?", "Que faire au feu rouge ?",
-                    "Qu'est-ce qui a pris feu à La Teste en 2022 ?", "Comment sensibiliser les enfants au feu ?",
-                    "Pourquoi faut-il faire attention au feu en été ?",
-                    "Je vois des flammes sur une vidéo, c'est quoi ?"]:
+                    "Au feu rouge je tourne à gauche ?", "Qu'est-ce qui a pris feu à La Teste en 2022 ?",
+                    "Comment sensibiliser les enfants au feu ?", "Pourquoi faut-il faire attention au feu en été ?",
+                    "Je vois des flammes sur une vidéo, c'est quoi ?", "Que faire s'il y a le feu dans la cuisine ?"]:
             self.assertFalse(self.urgence.detecter(non), non)
+
+    def test_urgence_ne_dit_pas_toujours_de_sortir(self):
+        texte = self.urgence.texte_page()
+        self.assertIn("Si le feu est dehors : restez à l'intérieur", texte)
+        self.assertIn("18 ou le 112", texte)
 
 
 class FauxClassifieur:
@@ -204,6 +212,41 @@ class TestRobustesse(unittest.TestCase):
         self.assertIn("Sources d'inspiration", fiches[1].reponse)
         self.assertEqual(fiches[1].sources, [("https://exemple.fr/page", "https://exemple.fr/page")])
         self.assertTrue(any("Q3" in a for a in avertissements), "une fiche illisible est signalée")
+
+    def test_faq_strophes_titres_et_statut(self):
+        f = Path(tempfile.mkdtemp()) / "faq.md"
+        f.write_text("## Q1 ?\nRéponse :\nPremier vers,\ndeuxième vers.\n\nTroisième vers.\n### Pour aller plus loin\n"
+                     "Encore.\nSources :\n- SDIS 17 (https://www.sdis17.fr)\nStatut : validée\n\n"
+                     "## Q2 ?\nRéponse : R2\nSources : X\nStatut : validation en cours\n", encoding="utf-8")
+        avertissements = []
+        q1, q2 = lire_faq(f, avertissements)
+        self.assertIn("deuxième vers.\n\nTroisième vers.", q1.reponse, "la strophe est gardée")
+        self.assertIn("### Pour aller plus loin", q1.reponse)
+        self.assertTrue(q1.validee)
+        self.assertEqual(q1.sources, [("SDIS 17", "https://www.sdis17.fr")])
+        self.assertFalse(q2.validee, "« validation en cours » n'est pas « validée »")
+        self.assertTrue(any("niveau 3" in a for a in avertissements))
+
+    def test_journal_demi_emoji(self):
+        from app.serveur import Feurisson
+        f = Feurisson(donnees=Path(tempfile.mkdtemp()), classifieur=False)
+        self.assertEqual(f.repondre("au feu \ud83d", [], "v")["etage"], "urgence")
+        f.journal.ecrire("signalements", question="q", reponse="r \ud83d", correction="c")
+
+    def test_consignes_publiques(self):
+        c = Contenu()
+        self.assertNotIn("l'animateur de l'atelier", c.consignes)
+        for numero in ("119", "3018", "https://www.risque-prevention-incendie.fr/17"):
+            self.assertIn(numero, c.consignes)
+        self.assertIn("https://www.risque-prevention-incendie.fr/17", c.urls_connues())
+        from app.serveur import LIMITE
+        self.assertTrue(all("119" in t and "18 ou le 112" in t for t in LIMITE.values()))
+
+    def test_page_sans_google_ni_cache_des_limites(self):
+        page = (RACINE / "static" / "index.html").read_text(encoding="utf-8")
+        self.assertNotIn("fonts.googleapis.com", page)
+        self.assertIn('if(etage !== "limite")', page)
+        self.assertIn("sessionStorage", page)
 
     def test_mot_inconnu_ne_sert_pas_une_mauvaise_fiche(self):
         index = IndexFAQ(Contenu().fiches)

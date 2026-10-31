@@ -32,6 +32,20 @@ class Journal:
         self.dossier.mkdir(parents=True, exist_ok=True)
         self.verrou = threading.Lock()
         self.purge = None
+        self._purger()
+        # Purge aussi quand personne ne pose de question (entre deux événements) ; sur la droplet, une tâche
+        # quotidienne efface les vieux journaux même quand le service est arrêté (deploy/installer.sh).
+        minuterie = threading.Timer(6 * 3600, self._purge_reguliere)
+        minuterie.daemon = True
+        minuterie.start()
+
+    def _purge_reguliere(self):
+        with self.verrou:
+            self.purge = None
+            self._purger()
+        minuterie = threading.Timer(6 * 3600, self._purge_reguliere)
+        minuterie.daemon = True
+        minuterie.start()
 
     def _purger(self):
         aujourdhui = datetime.date.today()
@@ -56,7 +70,8 @@ class Journal:
                 chemin = self.dossier / f"{genre}_{datetime.date.today()}.jsonl"
                 if chemin.exists() and chemin.stat().st_size > MO_PAR_JOUR * 1_000_000:
                     return
-                with open(chemin, "a", encoding="utf-8") as f:
+                # errors="replace" : un caractère impossible à écrire (moitié d'émoji) ne fait pas tout échouer.
+                with open(chemin, "a", encoding="utf-8", errors="replace") as f:
                     f.write(ligne)
-        except OSError as e:
+        except Exception as e:
             print(f"journal : ligne perdue ({type(e).__name__})", file=sys.stderr)

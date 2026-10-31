@@ -32,7 +32,8 @@ class Fiche:
 
     @property
     def validee(self):
-        return normaliser(self.statut).startswith("valid")
+        # « validée » exactement (« validation en cours » ou « validé ? » ne suffisent pas).
+        return normaliser(self.statut) in ("validee", "valide", "validees", "valides")
 
     def texte_page(self, moteur="mots"):
         """La réponse dans le format que la page sait afficher (sections ###), sans IA qui écrive."""
@@ -45,7 +46,7 @@ class Fiche:
                 f"###SOURCES\n{sources}\n")
 
 
-TITRE = re.compile(r"^#{2,}\s*(.*\S)\s*$")
+TITRE = re.compile(r"^##(?!#)\s*(.*\S)\s*$")     # « ## question », avec ou sans espace ; pas « ### »
 RUBRIQUES = (("autres facons", "variantes"), ("reponses", "reponse"), ("reponse", "reponse"),
              ("sources", "sources"), ("source", "sources"), ("statut", "statut"))
 
@@ -67,7 +68,7 @@ def source_de(texte):
     lien = URL.search(texte)
     if not lien:
         return texte.strip(), ""
-    nom = (texte[:lien.start()] + texte[lien.end():]).strip(" |:-")
+    nom = (texte[:lien.start()] + texte[lien.end():]).replace("()", "").replace("[]", "").strip(" |:-()[]")
     return nom or lien.group(0), lien.group(0)
 
 
@@ -84,8 +85,15 @@ def lire_faq(chemin, avertissements=None):
             fiches.append(fiche)
             rubrique = None
             continue
-        if fiche is None or not brute:
+        if fiche is None:
             continue
+        if not brute:
+            if rubrique == "reponse" and fiche.reponse:
+                fiche.reponse += "\n"       # une ligne vide entre deux strophes est gardée
+            continue
+        if brute.startswith("###") and avertissements is not None:
+            avertissements.append(f"faq.md, ligne {n} : « {brute} » est un titre de niveau 3 : il reste dans la "
+                                  "fiche précédente. Une nouvelle fiche commence par « ## ».")
         nom, reste = rubrique_de(brute)
         if nom == "statut":
             fiche.statut = reste or fiche.statut
@@ -103,7 +111,7 @@ def lire_faq(chemin, avertissements=None):
         elif rubrique == "reponse":
             fiche.reponse += ligne.rstrip() + "\n"
     for f in fiches:
-        f.reponse = f.reponse.strip()
+        f.reponse = re.sub(r"\n{3,}", "\n\n", f.reponse).strip()
         if avertissements is not None:
             if not f.reponse:
                 avertissements.append(f"faq.md, ligne {f.ligne} : « {f.question} » n'a pas de réponse lisible, "
@@ -158,8 +166,9 @@ class Contenu:
                 f"## LA FAQ DU GROUPE (réponses relues par le groupe)\n\n{faq or '(vide pour l instant)'}")
 
     def urls_connues(self):
-        """Les seuls liens que Feurisson peut présenter comme vérifiés : ceux du dataset et de la FAQ."""
-        urls = set(URL.findall(self.dataset))
+        """Les seuls liens que Feurisson peut présenter comme vérifiés : ceux des consignes, du dataset et de
+        la FAQ."""
+        urls = set(URL.findall(self.dataset)) | set(URL.findall(self.consignes))
         for f in self.fiches:
             urls.update(u for _, u in f.sources if u)
         return urls
